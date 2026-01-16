@@ -1,0 +1,7 @@
+﻿Builds/
+JuceLibraryCode/
+.vs/
+*.suo
+*.user
+*.VC.db
+*.opendb
