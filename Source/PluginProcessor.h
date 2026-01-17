@@ -63,7 +63,9 @@ private:
     using Filter = juce::dsp::IIR::Filter<float>;
     using Chain = juce::dsp::ProcessorChain<Filter, Filter, Filter, Filter, Filter, Filter, Filter, Filter, Filter, Filter>;
     // 処理チェイン宣言
-    Chain leftChain, rightChain;
+    Chain leftChainA, rightChainA;
+    Chain leftChainB, rightChainB;
+    Chain leftChainC, rightChainC;
 
     // バンド定義
     enum ChainIndices
@@ -73,6 +75,7 @@ private:
     };
 
     void updateFilters();
+    void updateFiltersRoutine(Chain& leftChain, Chain& rightChain, const std::string& suffix);
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XFadeEQAudioProcessor)

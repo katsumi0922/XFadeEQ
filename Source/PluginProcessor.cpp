@@ -9,21 +9,49 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+/*
+  ==============================================================================
+
+    ファイルスコープ
+
+  ==============================================================================
+*/
+
+// パラメータをベクターから生成したい
+static const std::vector<float> freqs = { 31.25f, 62.5f, 125.0f, 250.0f, 500.0f, 1000.0f, 2000.0f, 4000.0f, 8000.0f, 16000.0f };
+static const std::vector<std::string> paramIds = { "g31p25", "g62p5", "g125", "g250", "g500", "g1k", "g2k", "g4k", "g8k", "g16k" };
+static const std::vector<std::string> paramNames = { "31.25 Hz", "62.5 Hz", "125 Hz", "250 Hz", "500 Hz", "1 kHz", "2 kHz", "4 kHz", "8 kHz", "16 kHz" };
+static const std::vector<std::string> suffixes = { "_A", "_B", "_C" };
+static const std::vector<std::string> subscripts = { " (A)", " (B)", " (C)" };
+
+//==============================================================================
+
 // パラメータ構成の定義
 juce::AudioProcessorValueTreeState::ParameterLayout XFadeEQAudioProcessor::createParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g31p25", 1 }, "31.25 Hz", -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g62p5",  1 }, "62.5 Hz",  -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g125",   1 }, "125 Hz",   -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g250",   1 }, "250 Hz",   -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g500",   1 }, "500 Hz",   -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g1k",    1 }, "1 kHz",    -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g2k",    1 }, "2 kHz",    -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g4k",    1 }, "4 kHz",    -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g8k",    1 }, "8 kHz",    -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g16k",   1 }, "16 kHz",   -12.0f, 12.0f, 0.0f));
+    //layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g31p25", 1 }, "31.25 Hz", -12.0f, 12.0f, 0.0f));
+    //layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g62p5",  1 }, "62.5 Hz",  -12.0f, 12.0f, 0.0f));
+    //layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g125",   1 }, "125 Hz",   -12.0f, 12.0f, 0.0f));
+    //layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g250",   1 }, "250 Hz",   -12.0f, 12.0f, 0.0f));
+    //layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g500",   1 }, "500 Hz",   -12.0f, 12.0f, 0.0f));
+    //layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g1k",    1 }, "1 kHz",    -12.0f, 12.0f, 0.0f));
+    //layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g2k",    1 }, "2 kHz",    -12.0f, 12.0f, 0.0f));
+    //layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g4k",    1 }, "4 kHz",    -12.0f, 12.0f, 0.0f));
+    //layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g8k",    1 }, "8 kHz",    -12.0f, 12.0f, 0.0f));
+    //layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g16k",   1 }, "16 kHz",   -12.0f, 12.0f, 0.0f));
+
+    // バンド数×EQ数 10×3分layout.add()
+    for (int i = 0; i < suffixes.size(); i++)
+    {
+        for (int j = 0; j < freqs.size(); j++)
+        {
+            auto id = paramIds[j] + suffixes[i];
+            auto name = paramNames[j] + subscripts[i];
+            layout.add(std::make_unique<juce::AudioParameterFloat>(id, name, -12.0f, 12.0f, 0.0f));
+        }
+    }
 
     return layout;
 }
@@ -119,8 +147,9 @@ void XFadeEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     spec.numChannels = 1;
 
     // スペックの適用
-    leftChain.prepare (spec);
-    rightChain.prepare (spec);
+    leftChainA.prepare(spec);   rightChainA.prepare(spec);
+    leftChainB.prepare(spec);   rightChainB.prepare(spec);
+    leftChainC.prepare(spec);   rightChainC.prepare(spec);
 
     // パラメータ→フィルタの初期同期
     updateFilters();
@@ -132,34 +161,36 @@ void XFadeEQAudioProcessor::releaseResources()
     // spare memory, etc.
 }
 
-void XFadeEQAudioProcessor::updateFilters()
+// ★もっとスマートなやり方がある気がするけど思いつかない ベクターを活かせてない
+// 係数セットのところがtemplate引数なのでループ化しにくい 本来なら設計をちゃんとした上で実装するべきで、スクラッチでやってるのでしょうがない
+void XFadeEQAudioProcessor::updateFiltersRoutine(Chain& leftChain, Chain& rightChain, const std::string& suffix )
 {
     // パラメータの取得
-    auto g31p25 = apvts.getRawParameterValue ("g31p25")->load();
-    auto g62p5  = apvts.getRawParameterValue ("g62p5")->load();
-    auto g125   = apvts.getRawParameterValue ("g125")->load();
-    auto g250   = apvts.getRawParameterValue ("g250")->load();
-    auto g500   = apvts.getRawParameterValue ("g500")->load();
-    auto g1k    = apvts.getRawParameterValue ("g1k")->load();
-    auto g2k    = apvts.getRawParameterValue ("g2k")->load();
-    auto g4k    = apvts.getRawParameterValue ("g4k")->load();
-    auto g8k    = apvts.getRawParameterValue ("g8k")->load();
-    auto g16k   = apvts.getRawParameterValue ("g16k")->load();
+    auto g31p25 = apvts.getRawParameterValue ("g31p25" + suffix)->load();
+    auto g62p5  = apvts.getRawParameterValue ("g62p5" + suffix)->load();
+    auto g125   = apvts.getRawParameterValue ("g125" + suffix)->load();
+    auto g250   = apvts.getRawParameterValue ("g250" + suffix)->load();
+    auto g500   = apvts.getRawParameterValue ("g500" + suffix)->load();
+    auto g1k    = apvts.getRawParameterValue ("g1k" + suffix)->load();
+    auto g2k    = apvts.getRawParameterValue ("g2k" + suffix)->load();
+    auto g4k    = apvts.getRawParameterValue ("g4k" + suffix)->load();
+    auto g8k    = apvts.getRawParameterValue ("g8k" + suffix)->load();
+    auto g16k   = apvts.getRawParameterValue ("g16k" + suffix)->load();
 
     auto sampleRate = getSampleRate();
     const float Q = 1.4f;
 
     // 各バンドの係数計算
-    auto c1  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 31.25f, Q, juce::Decibels::decibelsToGain (g31p25));
-    auto c2  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 62.5f,  Q, juce::Decibels::decibelsToGain (g62p5));
-    auto c3  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 125.0f, Q, juce::Decibels::decibelsToGain (g125));
-    auto c4  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 250.0f, Q, juce::Decibels::decibelsToGain (g250));
-    auto c5  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 500.0f, Q, juce::Decibels::decibelsToGain (g500));
-    auto c6  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 1000.0f, Q, juce::Decibels::decibelsToGain (g1k));
-    auto c7  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 2000.0f, Q, juce::Decibels::decibelsToGain (g2k));
-    auto c8  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 4000.0f, Q, juce::Decibels::decibelsToGain (g4k));
-    auto c9  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 8000.0f, Q, juce::Decibels::decibelsToGain (g8k));
-    auto c10 = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 16000.0f, Q, juce::Decibels::decibelsToGain (g16k));
+    auto c1 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 31.25f, Q, juce::Decibels::decibelsToGain(g31p25));
+    auto c2 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 62.5f, Q, juce::Decibels::decibelsToGain(g62p5));
+    auto c3 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 125.0f, Q, juce::Decibels::decibelsToGain(g125));
+    auto c4 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 250.0f, Q, juce::Decibels::decibelsToGain(g250));
+    auto c5 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 500.0f, Q, juce::Decibels::decibelsToGain(g500));
+    auto c6 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 1000.0f, Q, juce::Decibels::decibelsToGain(g1k));
+    auto c7 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 2000.0f, Q, juce::Decibels::decibelsToGain(g2k));
+    auto c8 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 4000.0f, Q, juce::Decibels::decibelsToGain(g4k));
+    auto c9 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 8000.0f, Q, juce::Decibels::decibelsToGain(g8k));
+    auto c10 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 16000.0f, Q, juce::Decibels::decibelsToGain(g16k));
 
     // 各フィルタへの係数セット
     leftChain.get<Band1>().coefficients = c1;  rightChain.get<Band1>().coefficients = c1;
@@ -172,6 +203,52 @@ void XFadeEQAudioProcessor::updateFilters()
     leftChain.get<Band8>().coefficients = c8;  rightChain.get<Band8>().coefficients = c8;
     leftChain.get<Band9>().coefficients = c9;  rightChain.get<Band9>().coefficients = c9;
     leftChain.get<Band10>().coefficients = c10; rightChain.get<Band10>().coefficients = c10;
+}
+
+void XFadeEQAudioProcessor::updateFilters()
+{
+    //// パラメータの取得
+    //auto g31p25 = apvts.getRawParameterValue ("g31p25")->load();
+    //auto g62p5  = apvts.getRawParameterValue ("g62p5")->load();
+    //auto g125   = apvts.getRawParameterValue ("g125")->load();
+    //auto g250   = apvts.getRawParameterValue ("g250")->load();
+    //auto g500   = apvts.getRawParameterValue ("g500")->load();
+    //auto g1k    = apvts.getRawParameterValue ("g1k")->load();
+    //auto g2k    = apvts.getRawParameterValue ("g2k")->load();
+    //auto g4k    = apvts.getRawParameterValue ("g4k")->load();
+    //auto g8k    = apvts.getRawParameterValue ("g8k")->load();
+    //auto g16k   = apvts.getRawParameterValue ("g16k")->load();
+
+    //auto sampleRate = getSampleRate();
+    //const float Q = 1.4f;
+
+    //// 各バンドの係数計算
+    //auto c1  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 31.25f, Q, juce::Decibels::decibelsToGain (g31p25));
+    //auto c2  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 62.5f,  Q, juce::Decibels::decibelsToGain (g62p5));
+    //auto c3  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 125.0f, Q, juce::Decibels::decibelsToGain (g125));
+    //auto c4  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 250.0f, Q, juce::Decibels::decibelsToGain (g250));
+    //auto c5  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 500.0f, Q, juce::Decibels::decibelsToGain (g500));
+    //auto c6  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 1000.0f, Q, juce::Decibels::decibelsToGain (g1k));
+    //auto c7  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 2000.0f, Q, juce::Decibels::decibelsToGain (g2k));
+    //auto c8  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 4000.0f, Q, juce::Decibels::decibelsToGain (g4k));
+    //auto c9  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 8000.0f, Q, juce::Decibels::decibelsToGain (g8k));
+    //auto c10 = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 16000.0f, Q, juce::Decibels::decibelsToGain (g16k));
+
+    //// 各フィルタへの係数セット
+    //leftChain.get<Band1>().coefficients = c1;  rightChain.get<Band1>().coefficients = c1;
+    //leftChain.get<Band2>().coefficients = c2;  rightChain.get<Band2>().coefficients = c2;
+    //leftChain.get<Band3>().coefficients = c3;  rightChain.get<Band3>().coefficients = c3;
+    //leftChain.get<Band4>().coefficients = c4;  rightChain.get<Band4>().coefficients = c4;
+    //leftChain.get<Band5>().coefficients = c5;  rightChain.get<Band5>().coefficients = c5;
+    //leftChain.get<Band6>().coefficients = c6;  rightChain.get<Band6>().coefficients = c6;
+    //leftChain.get<Band7>().coefficients = c7;  rightChain.get<Band7>().coefficients = c7;
+    //leftChain.get<Band8>().coefficients = c8;  rightChain.get<Band8>().coefficients = c8;
+    //leftChain.get<Band9>().coefficients = c9;  rightChain.get<Band9>().coefficients = c9;
+    //leftChain.get<Band10>().coefficients = c10; rightChain.get<Band10>().coefficients = c10;
+
+    updateFiltersRoutine(leftChainA, rightChainA, suffixes[0]);
+    updateFiltersRoutine(leftChainB, rightChainB, suffixes[1]);
+    updateFiltersRoutine(leftChainC, rightChainC, suffixes[2]);
 }
 
 
@@ -228,7 +305,7 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         // 左フィルタ適用
         auto leftBlock = block.getSingleChannelBlock (0);
         juce::dsp::ProcessContextReplacing<float> leftContext (leftBlock);
-        leftChain.process (leftContext);
+        leftChainA.process (leftContext);   // ★とりあえずLにEQ_A
     }
 
     if (totalNumInputChannels >= 2)
@@ -236,7 +313,7 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         // 右フィルタ適用
         auto rightBlock = block.getSingleChannelBlock (1);
         juce::dsp::ProcessContextReplacing<float> rightContext (rightBlock);
-        rightChain.process (rightContext);
+        rightChainB.process (rightContext); // ★とりあえずRにEQ_B
     }
 }
 
