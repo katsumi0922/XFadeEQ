@@ -1,4 +1,4 @@
-/*
+﻿/*
   ==============================================================================
 
     This file contains the basic framework code for a JUCE plugin processor.
@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <juce_dsp/juce_dsp.h>
 
 //==============================================================================
 /**
@@ -53,7 +54,27 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    // パラメータレイアウト作成
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
+
 private:
+    // エイリアス
+    using Filter = juce::dsp::IIR::Filter<float>;
+    using Chain = juce::dsp::ProcessorChain<Filter, Filter, Filter>;
+    // 処理チェイン宣言
+    Chain leftChain, rightChain;
+
+    // バンド定義
+    enum ChainIndices
+    {
+        LowShelf,
+        MidPeak,
+        HighShelf
+    };
+
+    void updateFilters();
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XFadeEQAudioProcessor)
 };

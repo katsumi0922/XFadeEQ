@@ -1,4 +1,4 @@
-/*
+﻿/*
   ==============================================================================
 
     This file contains the basic framework code for a JUCE plugin processor.
@@ -8,6 +8,18 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+
+// パラメータ構成の定義
+juce::AudioProcessorValueTreeState::ParameterLayout XFadeEQAudioProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "LowGainDb", 1 }, "L", -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "MidGainDb", 1 }, "M", -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "HighGainDb", 1 }, "H", -12.0f, 12.0f, 0.0f));
+
+    return layout;
+}
 
 //==============================================================================
 XFadeEQAudioProcessor::XFadeEQAudioProcessor()
@@ -93,8 +105,18 @@ void XFadeEQAudioProcessor::changeProgramName (int index, const juce::String& ne
 //==============================================================================
 void XFadeEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    // 信号処理のスペック
+    juce::dsp::ProcessSpec spec;
+    spec.sampleRate = sampleRate;
+    spec.maximumBlockSize = (juce::uint32) samplesPerBlock;
+    spec.numChannels = 1;
+
+    // スペックの適用
+    leftChain.prepare (spec);
+    rightChain.prepare (spec);
+
+    // パラメータ→フィルタの初期同期
+    updateFilters();
 }
 
 void XFadeEQAudioProcessor::releaseResources()
@@ -102,6 +124,31 @@ void XFadeEQAudioProcessor::releaseResources()
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
+
+void XFadeEQAudioProcessor::updateFilters()
+{
+    // パラメータの取得
+    auto lowGain = apvts.getRawParameterValue ("LowGainDb")->load();
+    auto midGain = apvts.getRawParameterValue ("MidGainDb")->load();
+    auto highGain = apvts.getRawParameterValue ("HighGainDb")->load();
+
+    auto sampleRate = getSampleRate();
+
+    // 各バンドの係数計算
+    auto lowCoeffs = juce::dsp::IIR::Coefficients<float>::makeLowShelf (sampleRate, 100.0f, 0.707f, juce::Decibels::decibelsToGain (lowGain));
+    auto midCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 1000.0f, 1.0f, juce::Decibels::decibelsToGain (midGain));
+    auto highCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sampleRate, 8000.0f, 0.707f, juce::Decibels::decibelsToGain (highGain));
+
+    // 各フィルタへの係数セット
+    leftChain.get<LowShelf>().coefficients = lowCoeffs;
+    rightChain.get<LowShelf>().coefficients = lowCoeffs;
+    leftChain.get<MidPeak>().coefficients = midCoeffs;
+    rightChain.get<MidPeak>().coefficients = midCoeffs;
+    leftChain.get<HighShelf>().coefficients = highCoeffs;
+    rightChain.get<HighShelf>().coefficients = highCoeffs;
+}
+
+
 
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool XFadeEQAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -144,19 +191,29 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
+    // つまみ反映
+    updateFilters();
 
-        // ..do something to the data...
+    // dsp用に準備
+    juce::dsp::AudioBlock<float> block (buffer);
+
+    if (totalNumInputChannels >= 1)
+    {
+        // 左フィルタ適用
+        auto leftBlock = block.getSingleChannelBlock (0);
+        juce::dsp::ProcessContextReplacing<float> leftContext (leftBlock);
+        leftChain.process (leftContext);
+    }
+
+    if (totalNumInputChannels >= 2)
+    {
+        // 右フィルタ適用
+        auto rightBlock = block.getSingleChannelBlock (1);
+        juce::dsp::ProcessContextReplacing<float> rightContext (rightBlock);
+        rightChain.process (rightContext);
     }
 }
+
 
 //==============================================================================
 bool XFadeEQAudioProcessor::hasEditor() const
@@ -166,7 +223,8 @@ bool XFadeEQAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* XFadeEQAudioProcessor::createEditor()
 {
-    return new XFadeEQAudioProcessorEditor (*this);
+    // 汎用エディタ生成
+    return new juce::GenericAudioProcessorEditor (*this);
 }
 
 //==============================================================================

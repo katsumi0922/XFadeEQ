@@ -50,7 +50,39 @@ xxx
   - **鍵盤UI**: `MidiKeyboardState` ＋ `MidiKeyboardComponent` を Editor に持たせて表示。
   - `keyboardComponent(keyboardState, ...)`: 初期化子リストで構築が必要なコンポーネント。
 
+### パラメーター関連
+- https://qiita.com/COx2/items/a0dc18ef29685f951257
+    - 汎用的なGUIを生成してくれるGenericAudioProcessorEditorクラス
+    - 信号処理に専念したい序盤をこれを使うと良さそう
+- https://qiita.com/perfectpanda145/items/45f637fe54a3a76e60c9
+    - APVTS: 音声処理クラス(XXAudioProcessor)とエディタクラス（XXAudioProcessorEditorクラス）の両方でアクセスできるパラメータが容易に定義
+    - GenericAudioProcessorEditorは、Processorが持ってる“AudioProcessorParameter群”を自動でUI化
+    - APVTSは、その“AudioProcessorParameter群”を まとめて定義・管理しやすい
+    - APVTSを使うと **state保存/復元（DAWプロジェクト保存）**が簡単に
+
+### juce_dspとか基本的な信号処理(これ理解すればとりあえずグライコは作れそう)
+- https://trap.jp/post/1558/
+  - juce_dspの使い方
+  - 本当だったら、Gain部分はサンプルごとにn倍したり、Pan部分はLRチャンネルに重みづけをしたりするのですが、このレベルの簡単な信号処理だったらJUCEのdsp::Gainとdsp::Pannerモジュールを使うことが出来ます。JUCEはかなりの数の信号処理機をデフォルトで持っているので、余程のこだわりが無ければこれらのモジュールを使ってしまうのが便利です。
+  - juce::dsp::AudioBlockでラッパーするとbufferがjuce_dspで扱いやすくなる
+  - `juce::dsp::ProcessContextReplacing<float> context(audioBlock)`と言った感じで前処理し、`process(context)`すると信号処理が適用できる
+- https://qiita.com/Aogiri-m2d/items/ac012a3b9cb3e50e1b07
+  - juce_dspに入っているフィルタの使い方とか
+  - 情報量そこそこあるので読み飛ばしながら
+  - AudioBlockとProcessContextReplacingは何者なのか
+  - 入力～フィルタまでの流れ
+    1. フィルタ用processor（例：`IIR::Filter`）をメンバに用意し、ステレオ等にしたい場合は `ProcessorDuplicator<Filter, Coefficients(State)>` でラップして「係数（状態）を共有できる形」にする。
+    2. `prepareToPlay()` で `ProcessSpec`（sampleRate/ch数/blockサイズ）を埋めて、各processorに `prepare(spec)` を呼んで初期化する。
+    3. `processBlock()` で係数/パラメータを更新し、`AudioSampleBuffer`→`AudioBlock`→`ProcessContextReplacing` と包んで、`lsf.process(context)` のようにチェーン順に `process()` を呼べば入力信号にフィルタがかかる。
+
 ### その他
 - https://note.com/leftbank/n/nc60ebc8bf3d2
-- https://qiita.com/COx2/items/a0dc18ef29685f951257
 - https://www.youtube.com/watch?v=i_Iq4_Kd7Rc
+- https://panda-clip.com/juce-modify-simple-highpass1/
+
+### AI(LLM)の使用について
+- 本開発はJUCEフレームワークの学習を主眼と置いておりコーディングにはAIを使用していない
+- ただし以下のようなケースでは積極的にAIを使用している
+  - コメント追記
+  - ソースコード整形（変数名なども）
+  - README等ドキュメントの添削/整形
