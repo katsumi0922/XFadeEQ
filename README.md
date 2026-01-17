@@ -29,7 +29,7 @@ xxx
 ## 学習の軌跡 (Dev Logs)
 ここでは、開発中に学んだことや直面した課題を記録していきます。
 
-### 立ち上げ ～ 初期チュートリアル
+### 環境立ち上げ ～ 初期チュートリアル
 - https://qiita.com/COx2/items/fa1aceb5013f92457469
   - 主にこれを見た
 - https://trap.jp/post/2307/
@@ -58,7 +58,7 @@ xxx
     - APVTS: 音声処理クラス(XXAudioProcessor)とエディタクラス（XXAudioProcessorEditorクラス）の両方でアクセスできるパラメータが容易に定義
     - GenericAudioProcessorEditorは、Processorが持ってる“AudioProcessorParameter群”を自動でUI化
     - APVTSは、その“AudioProcessorParameter群”を まとめて定義・管理しやすい
-    - APVTSを使うと **state保存/復元（DAWプロジェクト保存）**が簡単に
+    - (今回はそこまで手が回らなそうだけど）APVTSを使うと **state保存/復元（DAWプロジェクト保存）**が簡単に実装できる
 
 ### juce_dspとか基本的な信号処理(これ理解すればとりあえずグライコは作れそう)
 - https://trap.jp/post/1558/
@@ -74,6 +74,8 @@ xxx
     1. フィルタ用processor（例：`IIR::Filter`）をメンバに用意し、ステレオ等にしたい場合は `ProcessorDuplicator<Filter, Coefficients(State)>` でラップして「係数（状態）を共有できる形」にする。
     2. `prepareToPlay()` で `ProcessSpec`（sampleRate/ch数/blockサイズ）を埋めて、各processorに `prepare(spec)` を呼んで初期化する。
     3. `processBlock()` で係数/パラメータを更新し、`AudioSampleBuffer`→`AudioBlock`→`ProcessContextReplacing` と包んで、`lsf.process(context)` のようにチェーン順に `process()` を呼べば入力信号にフィルタがかかる。
+- https://panda-clip.com/juce-introduction-to-dsp3/
+  - juce::dsp::ProcessorChainを使えば複数のdsp処理をまとめて扱える
 
 ### その他
 - https://note.com/leftbank/n/nc60ebc8bf3d2

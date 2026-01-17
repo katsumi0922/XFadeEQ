@@ -14,9 +14,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout XFadeEQAudioProcessor::creat
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "LowGainDb", 1 }, "L", -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "MidGainDb", 1 }, "M", -12.0f, 12.0f, 0.0f));
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "HighGainDb", 1 }, "H", -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g31p25", 1 }, "31.25 Hz", -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g62p5",  1 }, "62.5 Hz",  -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g125",   1 }, "125 Hz",   -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g250",   1 }, "250 Hz",   -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g500",   1 }, "500 Hz",   -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g1k",    1 }, "1 kHz",    -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g2k",    1 }, "2 kHz",    -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g4k",    1 }, "4 kHz",    -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g8k",    1 }, "8 kHz",    -12.0f, 12.0f, 0.0f));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "g16k",   1 }, "16 kHz",   -12.0f, 12.0f, 0.0f));
 
     return layout;
 }
@@ -128,24 +135,44 @@ void XFadeEQAudioProcessor::releaseResources()
 void XFadeEQAudioProcessor::updateFilters()
 {
     // パラメータの取得
-    auto lowGain = apvts.getRawParameterValue ("LowGainDb")->load();
-    auto midGain = apvts.getRawParameterValue ("MidGainDb")->load();
-    auto highGain = apvts.getRawParameterValue ("HighGainDb")->load();
+    auto g31p25 = apvts.getRawPar
+        ameterValue ("g31p25")->load();
+    auto g62p5  = apvts.getRawParameterValue ("g62p5")->load();
+    auto g125   = apvts.getRawParameterValue ("g125")->load();
+    auto g250   = apvts.getRawParameterValue ("g250")->load();
+    auto g500   = apvts.getRawParameterValue ("g500")->load();
+    auto g1k    = apvts.getRawParameterValue ("g1k")->load();
+    auto g2k    = apvts.getRawParameterValue ("g2k")->load();
+    auto g4k    = apvts.getRawParameterValue ("g4k")->load();
+    auto g8k    = apvts.getRawParameterValue ("g8k")->load();
+    auto g16k   = apvts.getRawParameterValue ("g16k")->load();
 
     auto sampleRate = getSampleRate();
+    const float Q = 1.4f;
 
     // 各バンドの係数計算
-    auto lowCoeffs = juce::dsp::IIR::Coefficients<float>::makeLowShelf (sampleRate, 100.0f, 0.707f, juce::Decibels::decibelsToGain (lowGain));
-    auto midCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 1000.0f, 1.0f, juce::Decibels::decibelsToGain (midGain));
-    auto highCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sampleRate, 8000.0f, 0.707f, juce::Decibels::decibelsToGain (highGain));
+    auto c1  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (samp　leRate, 31.25f, Q, juce::Decibels::decibelsToGain (g31p25));
+    auto c2  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 62.5f,  Q, juce::Decibels::decibelsToGain (g62p5));
+    auto c3  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 125.0f, Q, juce::Decibels::decibelsToGain (g125));
+    auto c4  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 250.0f, Q, juce::Decibels::decibelsToGain (g250));
+    auto c5  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 500.0f, Q, juce::Decibels::decibelsToGain (g500));
+    auto c6  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 1000.0f, Q, juce::Decibels::decibelsToGain (g1k));
+    auto c7  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 2000.0f, Q, juce::Decibels::decibelsToGain (g2k));
+    auto c8  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 4000.0f, Q, juce::Decibels::decibelsToGain (g4k));
+    auto c9  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 8000.0f, Q, juce::Decibels::decibelsToGain (g8k));
+    auto c10 = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 16000.0f, Q, juce::Decibels::decibelsToGain (g16k));
 
     // 各フィルタへの係数セット
-    leftChain.get<LowShelf>().coefficients = lowCoeffs;
-    rightChain.get<LowShelf>().coefficients = lowCoeffs;
-    leftChain.get<MidPeak>().coefficients = midCoeffs;
-    rightChain.get<MidPeak>().coefficients = midCoeffs;
-    leftChain.get<HighShelf>().coefficients = highCoeffs;
-    rightChain.get<HighShelf>().coefficients = highCoeffs;
+    leftChain.get<Band1>().coefficients = c1;  rightChain.get<Band1>().coefficients = c1;
+    leftChain.get<Band2>().coefficients = c2;  rightChain.get<Band2>().coefficients = c2;
+    leftChain.get<Band3>().coefficients = c3;  rightChain.get<Band3>().coefficients = c3;
+    leftChain.get<Band4>().coefficients = c4;  rightChain.get<Band4>().coefficients = c4;
+    leftChain.get<Band5>().coefficients = c5;  rightChain.get<Band5>().coefficients = c5;
+    leftChain.get<Band6>().coefficients = c6;  rightChain.get<Band6>().coefficients = c6;
+    leftChain.get<Band7>().coefficients = c7;  rightChain.get<Band7>().coefficients = c7;
+    leftChain.get<Band8>().coefficients = c8;  rightChain.get<Band8>().coefficients = c8;
+    leftChain.get<Band9>().coefficients = c9;  rightChain.get<Band9>().coefficients = c9;
+    leftChain.get<Band10>().coefficients = c10; rightChain.get<Band10>().coefficients = c10;
 }
 
 

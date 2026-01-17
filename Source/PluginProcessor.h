@@ -61,16 +61,15 @@ public:
 private:
     // エイリアス
     using Filter = juce::dsp::IIR::Filter<float>;
-    using Chain = juce::dsp::ProcessorChain<Filter, Filter, Filter>;
+    using Chain = juce::dsp::ProcessorChain<Filter, Filter, Filter, Filter, Filter, Filter, Filter, Filter, Filter, Filter>;
     // 処理チェイン宣言
     Chain leftChain, rightChain;
 
     // バンド定義
     enum ChainIndices
     {
-        LowShelf,
-        MidPeak,
-        HighShelf
+        Band1, Band2, Band3, Band4, Band5,
+        Band6, Band7, Band8, Band9, Band10
     };
 
     void updateFilters();
