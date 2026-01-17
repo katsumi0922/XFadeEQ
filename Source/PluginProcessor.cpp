@@ -135,8 +135,7 @@ void XFadeEQAudioProcessor::releaseResources()
 void XFadeEQAudioProcessor::updateFilters()
 {
     // パラメータの取得
-    auto g31p25 = apvts.getRawPar
-        ameterValue ("g31p25")->load();
+    auto g31p25 = apvts.getRawParameterValue ("g31p25")->load();
     auto g62p5  = apvts.getRawParameterValue ("g62p5")->load();
     auto g125   = apvts.getRawParameterValue ("g125")->load();
     auto g250   = apvts.getRawParameterValue ("g250")->load();
@@ -151,7 +150,7 @@ void XFadeEQAudioProcessor::updateFilters()
     const float Q = 1.4f;
 
     // 各バンドの係数計算
-    auto c1  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (samp　leRate, 31.25f, Q, juce::Decibels::decibelsToGain (g31p25));
+    auto c1  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 31.25f, Q, juce::Decibels::decibelsToGain (g31p25));
     auto c2  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 62.5f,  Q, juce::Decibels::decibelsToGain (g62p5));
     auto c3  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 125.0f, Q, juce::Decibels::decibelsToGain (g125));
     auto c4  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, 250.0f, Q, juce::Decibels::decibelsToGain (g250));
