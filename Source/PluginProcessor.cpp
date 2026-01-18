@@ -31,8 +31,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout XFadeEQAudioProcessor::creat
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    // EQ切り替え用
-    layout.add(std::make_unique<juce::AudioParameterInt>("currentEq", "Current EQ <0:A, 1:B, 2:C>", 0, 2, 0));
+    // EQ切り替えXFader
+    layout.add(std::make_unique<juce::AudioParameterFloat>("xFader", "XFader <-1:C, 0:A, 1:B>", -1.0f, 1.0f, 0.0f));
 
     // バンド数×EQ数 10×3分layout.add()
     for (int i = 0; i < suffixes.size(); i++)
@@ -251,7 +251,7 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     // つまみ反映
     updateFilters();
     // EQ切り替え
-    int currentEq = (int) (apvts.getRawParameterValue("currentEq")->load());
+    float xFader = (float) (apvts.getRawParameterValue("xFader")->load());
 
     // dsp用に準備
     juce::dsp::AudioBlock<float> block (buffer);
@@ -261,12 +261,9 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         // 左フィルタ適用
         auto leftBlock = block.getSingleChannelBlock (0);
         juce::dsp::ProcessContextReplacing<float> leftContext (leftBlock);
-        switch (currentEq)
-        {
-            case 0:leftChainA.process(leftContext); break;
-            case 1:leftChainB.process(leftContext); break;
-            case 2:leftChainC.process(leftContext); break;
-        }
+        if (xFader == -1.0f)    leftChainC.process(leftContext);
+        if (xFader == 0.0f)     leftChainA.process(leftContext);
+        if (xFader == 1.0f)     leftChainB.process(leftContext);
     }
 
     if (totalNumInputChannels >= 2)
@@ -274,12 +271,9 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         // 右フィルタ適用
         auto rightBlock = block.getSingleChannelBlock (1);
         juce::dsp::ProcessContextReplacing<float> rightContext (rightBlock);
-        switch (currentEq)
-        {
-            case 0:rightChainA.process(rightContext); break;
-            case 1:rightChainB.process(rightContext); break;
-            case 2:rightChainC.process(rightContext); break;
-        }
+        if (xFader == -1.0f)    rightChainC.process(rightContext);
+        if (xFader == 0.0f)     rightChainA.process(rightContext);
+        if (xFader == 1.0f)     rightChainB.process(rightContext);
     }
 }
 
