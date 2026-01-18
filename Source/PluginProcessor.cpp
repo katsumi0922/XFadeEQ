@@ -25,10 +25,10 @@ static const std::vector<std::string> suffixes = { "_A", "_B", "_C" };
 static const std::vector<std::string> subscripts = { " (A)", " (B)", " (C)" };
 
 //==============================================================================
-
-// パラメータ構成の定義
 juce::AudioProcessorValueTreeState::ParameterLayout XFadeEQAudioProcessor::createParameterLayout()
 {
+    // パラメータ構成の定義
+    // layoutに必要なパラメータを追加していくと `new juce::GenericAudioProcessorEditor()` でマルっと簡易UI作ってくれる
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
     // EQ切り替えXFader
@@ -160,7 +160,8 @@ void XFadeEQAudioProcessor::releaseResources()
 void XFadeEQAudioProcessor::updateFiltersRoutine(Chain& leftChain, Chain& rightChain, const std::string& suffix )
 {
     // ★もっとスマートなやり方がある気がするけど思いつかない ベクターを活かせてない
-    // 係数セットのところがtemplate引数なのでループ化しにくい 本来なら設計をちゃんとした上で実装するべきで、スクラッチでやってるのでしょうがない
+    // 係数セットのところがtemplate引数なのでループ化しにくい 本来なら設計をちゃんとした上で実装するべきで、エイヤでやってるのでしょうがない
+    // 多分、今回のような同じ種類のプロセッサ(filter)を10個並べてるようなケースではProcessorChain使わないほうが良い
     
     // パラメータの取得
     auto g31p25 = apvts.getRawParameterValue ("g31p25" + suffix)->load();
