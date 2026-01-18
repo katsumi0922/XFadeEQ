@@ -233,6 +233,26 @@ bool XFadeEQAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) 
 }
 #endif
 
+void XFadeEQAudioProcessor::processAndAdd(Chain& chain, float weight, const juce::AudioBuffer<float>& dryIn, juce::AudioBuffer<float>& buffer, int channel)
+{
+    // process()およびProcessContextReplacingが破壊的処理
+    // なので、dry音をtemporaryに処理して加算する関数を用意したがDSPライブラリにある気がする
+    // 探したけどちょうどいいのが見当たらなかった
+
+    // dryInをtempBufferへコピー
+    juce::AudioBuffer<float> tempBuffer;
+    tempBuffer.makeCopyOf(dryIn);
+
+    // フィルタ適用
+    juce::dsp::AudioBlock<float> block(tempBuffer);
+    block = block.getSingleChannelBlock(channel);
+    juce::dsp::ProcessContextReplacing<float> context(block);
+    chain.process(context);
+    
+    // フィルタ後のtempBufferをbufferへ重み付け加算
+    buffer.addFrom(channel, 0, tempBuffer, channel, 0, buffer.getNumSamples(), weight);
+}
+
 void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -252,28 +272,30 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     updateFilters();
     // EQ切り替え
     float xFader = (float) (apvts.getRawParameterValue("xFader")->load());
+    float weightA = 1.0f - std::abs(xFader);
+    float weightB = (xFader > 0.0f) ? std::abs(xFader) : 0.0f;
+    float weightC = (xFader < 0.0f) ? std::abs(xFader) : 0.0f;
 
-    // dsp用に準備
-    juce::dsp::AudioBlock<float> block (buffer);
+    // ドライ音を取っておく
+    juce::AudioBuffer<float> dryIn;
+    dryIn.makeCopyOf(buffer);
+    // 出力バッファをクリア
+    buffer.clear();
 
     if (totalNumInputChannels >= 1)
     {
         // 左フィルタ適用
-        auto leftBlock = block.getSingleChannelBlock (0);
-        juce::dsp::ProcessContextReplacing<float> leftContext (leftBlock);
-        if (xFader == -1.0f)    leftChainC.process(leftContext);
-        if (xFader == 0.0f)     leftChainA.process(leftContext);
-        if (xFader == 1.0f)     leftChainB.process(leftContext);
+        processAndAdd(leftChainA, weightA, dryIn, buffer, 0);
+        processAndAdd(leftChainB, weightB, dryIn, buffer, 0);
+        processAndAdd(leftChainC, weightC, dryIn, buffer, 0);
     }
 
     if (totalNumInputChannels >= 2)
     {
         // 右フィルタ適用
-        auto rightBlock = block.getSingleChannelBlock (1);
-        juce::dsp::ProcessContextReplacing<float> rightContext (rightBlock);
-        if (xFader == -1.0f)    rightChainC.process(rightContext);
-        if (xFader == 0.0f)     rightChainA.process(rightContext);
-        if (xFader == 1.0f)     rightChainB.process(rightContext);
+        processAndAdd(rightChainA, weightA, dryIn, buffer, 1);
+        processAndAdd(rightChainB, weightB, dryIn, buffer, 1);
+        processAndAdd(rightChainC, weightC, dryIn, buffer, 1);
     }
 }
 

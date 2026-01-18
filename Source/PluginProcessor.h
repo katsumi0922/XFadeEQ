@@ -76,6 +76,7 @@ private:
 
     void updateFilters();
     void updateFiltersRoutine(Chain& leftChain, Chain& rightChain, const std::string& suffix);
+    void processAndAdd(Chain& chain, float weight, const juce::AudioBuffer<float>& dryIn, juce::AudioBuffer<float>& buffer, int channel);
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XFadeEQAudioProcessor)
