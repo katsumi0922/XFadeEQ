@@ -143,6 +143,10 @@ void XFadeEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     leftChainB.prepare(spec);   rightChainB.prepare(spec);
     leftChainC.prepare(spec);   rightChainC.prepare(spec);
 
+    // パラレルプロセッシングのためのバッファ
+    tempBuffer.setSize(getTotalNumOutputChannels(), samplesPerBlock);
+    dryInBuffer.setSize(getTotalNumOutputChannels(), samplesPerBlock);
+
     // パラメータ→フィルタの初期同期
     updateFilters();
 }
@@ -233,15 +237,14 @@ bool XFadeEQAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) 
 }
 #endif
 
-void XFadeEQAudioProcessor::processAndAdd(Chain& chain, float weight, const juce::AudioBuffer<float>& dryIn, juce::AudioBuffer<float>& buffer, int channel)
+void XFadeEQAudioProcessor::processAndAdd(Chain& chain, float weight, const juce::AudioBuffer<float>& dryInBuffer, juce::AudioBuffer<float>& buffer, int channel)
 {
     // process()およびProcessContextReplacingが破壊的処理
     // なので、dry音をtemporaryに処理して加算する関数を用意したがDSPライブラリにある気がする
     // 探したけどちょうどいいのが見当たらなかった
 
-    // dryInをtempBufferへコピー
-    juce::AudioBuffer<float> tempBuffer;
-    tempBuffer.makeCopyOf(dryIn);
+    // dryInBufferをtempBufferへコピー
+    tempBuffer.makeCopyOf(dryInBuffer);
 
     // フィルタ適用
     juce::dsp::AudioBlock<float> block(tempBuffer);
@@ -277,25 +280,24 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     float weightC = (xFader < 0.0f) ? std::abs(xFader) : 0.0f;
 
     // ドライ音を取っておく
-    juce::AudioBuffer<float> dryIn;
-    dryIn.makeCopyOf(buffer);
+    dryInBuffer.makeCopyOf(buffer);
     // 出力バッファをクリア
     buffer.clear();
 
     if (totalNumInputChannels >= 1)
     {
         // 左フィルタ適用
-        processAndAdd(leftChainA, weightA, dryIn, buffer, 0);
-        processAndAdd(leftChainB, weightB, dryIn, buffer, 0);
-        processAndAdd(leftChainC, weightC, dryIn, buffer, 0);
+        processAndAdd(leftChainA, weightA, dryInBuffer, buffer, 0);
+        processAndAdd(leftChainB, weightB, dryInBuffer, buffer, 0);
+        processAndAdd(leftChainC, weightC, dryInBuffer, buffer, 0);
     }
 
     if (totalNumInputChannels >= 2)
     {
         // 右フィルタ適用
-        processAndAdd(rightChainA, weightA, dryIn, buffer, 1);
-        processAndAdd(rightChainB, weightB, dryIn, buffer, 1);
-        processAndAdd(rightChainC, weightC, dryIn, buffer, 1);
+        processAndAdd(rightChainA, weightA, dryInBuffer, buffer, 1);
+        processAndAdd(rightChainB, weightB, dryInBuffer, buffer, 1);
+        processAndAdd(rightChainC, weightC, dryInBuffer, buffer, 1);
     }
 }
 
