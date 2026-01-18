@@ -243,8 +243,8 @@ void XFadeEQAudioProcessor::processAndAdd(Chain& chain, float weight, const juce
     // なので、dry音をtemporaryに処理して加算する関数を用意したがDSPライブラリにある気がする
     // 探したけどちょうどいいのが見当たらなかった
 
-    // dryInBufferをtempBufferへコピー
-    tempBuffer.makeCopyOf(dryInBuffer);
+    // dryInBufferをtempBufferへコピー(必要なchだけ)
+    tempBuffer.copyFrom(channel, 0, dryInBuffer, channel, 0, dryInBuffer.getNumSamples());
 
     // フィルタ適用
     juce::dsp::AudioBlock<float> block(tempBuffer);
