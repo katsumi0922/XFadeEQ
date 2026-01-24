@@ -311,8 +311,9 @@ bool XFadeEQAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* XFadeEQAudioProcessor::createEditor()
 {
-    // 汎用エディタ生成
-    return new juce::GenericAudioProcessorEditor (*this);
+    //// 汎用エディタ生成
+    //return new juce::GenericAudioProcessorEditor (*this);
+    return new XFadeEQAudioProcessorEditor(*this, apvts);
 }
 
 //==============================================================================
