@@ -13,6 +13,10 @@
 XFadeEQAudioProcessorEditor::XFadeEQAudioProcessorEditor (XFadeEQAudioProcessor& p, juce::AudioProcessorValueTreeState& apvts)
     : AudioProcessorEditor (&p), valueTreeState(apvts), audioProcessor (p)
 {
+    eqSlider.setSliderStyle(juce::Slider::LinearVertical);
+    eqSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+    // gainSlider.setRange(0.0f, 1.0f, 0.0f); // APVTS側のrangeに合わせる（or ここは不要）
+    // gainSlider.setSkewFactorFromMidPoint(0.5f); // 必要なら（対数っぽい操作感）
     addAndMakeVisible(eqSlider);
     eqAttachment.reset(new SliderAttachment(valueTreeState, "g500_A", eqSlider));
 
@@ -38,5 +42,5 @@ void XFadeEQAudioProcessorEditor::paint (juce::Graphics& g)
 
 void XFadeEQAudioProcessorEditor::resized()
 {
-    eqSlider.setBounds(5, 5, 250, 30);
+     eqSlider.setBounds(5, 5, 30, 250);
 }
