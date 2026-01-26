@@ -5,6 +5,7 @@
               pluginManufacturerCode="K922" pluginCode="XFEQ">
   <MAINGROUP id="sfXsvh" name="XFadeEQ">
     <GROUP id="{B9212C53-D590-9625-6A37-93B632FDCCF6}" name="Source">
+      <FILE id="CllDoS" name="PluginCommon.h" compile="0" resource="0" file="Source/PluginCommon.h"/>
       <FILE id="t4n8JT" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="RHJfP4" name="PluginProcessor.h" compile="0" resource="0"
