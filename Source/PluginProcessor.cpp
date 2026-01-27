@@ -22,15 +22,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout XFadeEQAudioProcessor::creat
     layout.add(std::make_unique<juce::AudioParameterFloat>("xFader", "XFader <-1:C, 0:A, 1:B>", -1.0f, 1.0f, 0.0f));
 
     // バンド数×EQ数 10×3分layout.add()
-    for (int i = 0; i < PluginCommon::suffixes.size(); i++)
+    for (int i = 0; i < PluginCommon::numEqs; i++)
     {
-        for (int j = 0; j < PluginCommon::freqs.size(); j++)
+        for (int j = 0; j < PluginCommon::numBands; j++)
         {
-            //auto id = std::string(PluginCommon::paramIds[j]) + suffixes[i];
             auto id = std::format("{}{}", PluginCommon::paramIds[j], PluginCommon::suffixes[i]);
-            //auto name = paramNames[j] + subscripts[i];
             auto name = std::format("{}{}", PluginCommon::paramNames[j], PluginCommon::subscripts[i]);
-            layout.add(std::make_unique<juce::AudioParameterFloat>(id, name, -12.0f, 12.0f, 0.0f));
+            layout.add(std::make_unique<juce::AudioParameterFloat>(id, name, -1.0f * PluginCommon::gainRangeDb, PluginCommon::gainRangeDb, 0.0f));
         }
     }
 
@@ -128,9 +126,15 @@ void XFadeEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     spec.numChannels = 1;
 
     // スペックの適用
-    leftChainA.prepare(spec);   rightChainA.prepare(spec);
-    leftChainB.prepare(spec);   rightChainB.prepare(spec);
-    leftChainC.prepare(spec);   rightChainC.prepare(spec);
+    for (int i = 0; i < PluginCommon::numBands; ++i)
+    {
+        leftFiltersA[i].prepare(spec);
+        rightFiltersA[i].prepare(spec);
+        leftFiltersB[i].prepare(spec);
+        rightFiltersB[i].prepare(spec);
+        leftFiltersC[i].prepare(spec);
+        rightFiltersC[i].prepare(spec);
+    }
 
     // パラレルプロセッシングのためのバッファ
     tempBuffer.setSize(getTotalNumOutputChannels(), samplesPerBlock);
@@ -146,57 +150,31 @@ void XFadeEQAudioProcessor::releaseResources()
     // spare memory, etc.
 }
 
-void XFadeEQAudioProcessor::updateFiltersRoutine(Chain& leftChain, Chain& rightChain, std::string_view suffix )
+void XFadeEQAudioProcessor::updateFiltersRoutine(FilterArray& leftFilters, FilterArray& rightFilters, std::string_view suffix )
 {
-    // ★もっとスマートなやり方がある気がするけど思いつかない ベクターを活かせてない
-    // 係数セットのところがtemplate引数なのでループ化しにくい 本来なら設計をちゃんとした上で実装するべきで、エイヤでやってるのでしょうがない
-    // 多分、今回のような同じ種類のプロセッサ(filter)を10個並べてるようなケースではProcessorChain使わないほうが良い
-    
-    // パラメータの取得
-    auto g31p25 = apvts.getRawParameterValue (std::format("g31p25{}", suffix))->load();
-    auto g62p5  = apvts.getRawParameterValue (std::format("g62p5{}", suffix))->load();
-    auto g125   = apvts.getRawParameterValue (std::format("g125{}", suffix))->load();
-    auto g250   = apvts.getRawParameterValue (std::format("g250{}", suffix))->load();
-    auto g500   = apvts.getRawParameterValue (std::format("g500{}", suffix))->load();
-    auto g1k    = apvts.getRawParameterValue (std::format("g1k{}", suffix))->load();
-    auto g2k    = apvts.getRawParameterValue (std::format("g2k{}", suffix))->load();
-    auto g4k    = apvts.getRawParameterValue (std::format("g4k{}", suffix))->load();
-    auto g8k    = apvts.getRawParameterValue (std::format("g8k{}", suffix))->load();
-    auto g16k   = apvts.getRawParameterValue (std::format("g16k{}", suffix))->load();
-
     auto sampleRate = getSampleRate();
-    const float Q = 1.4f;
 
-    // 各バンドの係数計算
-    auto c1 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 31.25f, Q, juce::Decibels::decibelsToGain(g31p25));
-    auto c2 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 62.5f, Q, juce::Decibels::decibelsToGain(g62p5));
-    auto c3 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 125.0f, Q, juce::Decibels::decibelsToGain(g125));
-    auto c4 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 250.0f, Q, juce::Decibels::decibelsToGain(g250));
-    auto c5 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 500.0f, Q, juce::Decibels::decibelsToGain(g500));
-    auto c6 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 1000.0f, Q, juce::Decibels::decibelsToGain(g1k));
-    auto c7 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 2000.0f, Q, juce::Decibels::decibelsToGain(g2k));
-    auto c8 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 4000.0f, Q, juce::Decibels::decibelsToGain(g4k));
-    auto c9 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 8000.0f, Q, juce::Decibels::decibelsToGain(g8k));
-    auto c10 = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 16000.0f, Q, juce::Decibels::decibelsToGain(g16k));
+    for (int i = 0; i < PluginCommon::numBands; ++i)
+    {
+        // パラメータの取得
+        auto id = std::format("{}{}", PluginCommon::paramIds[i], suffix);
+        auto gainCtx = apvts.getRawParameterValue(id);
+        auto gain = gainCtx->load();
 
-    // 各フィルタへの係数セット
-    leftChain.get<Band1>().coefficients = c1;  rightChain.get<Band1>().coefficients = c1;
-    leftChain.get<Band2>().coefficients = c2;  rightChain.get<Band2>().coefficients = c2;
-    leftChain.get<Band3>().coefficients = c3;  rightChain.get<Band3>().coefficients = c3;
-    leftChain.get<Band4>().coefficients = c4;  rightChain.get<Band4>().coefficients = c4;
-    leftChain.get<Band5>().coefficients = c5;  rightChain.get<Band5>().coefficients = c5;
-    leftChain.get<Band6>().coefficients = c6;  rightChain.get<Band6>().coefficients = c6;
-    leftChain.get<Band7>().coefficients = c7;  rightChain.get<Band7>().coefficients = c7;
-    leftChain.get<Band8>().coefficients = c8;  rightChain.get<Band8>().coefficients = c8;
-    leftChain.get<Band9>().coefficients = c9;  rightChain.get<Band9>().coefficients = c9;
-    leftChain.get<Band10>().coefficients = c10; rightChain.get<Band10>().coefficients = c10;
+        // 係数計算
+        auto coeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, PluginCommon::freqs[i], PluginCommon::filterQ, juce::Decibels::decibelsToGain(gain));
+
+        // 係数セット
+        leftFilters[i].coefficients = coeffs;
+        rightFilters[i].coefficients = coeffs;
+    }
 }
 
 void XFadeEQAudioProcessor::updateFilters()
 {
-    updateFiltersRoutine(leftChainA, rightChainA, PluginCommon::suffixes[0]);
-    updateFiltersRoutine(leftChainB, rightChainB, PluginCommon::suffixes[1]);
-    updateFiltersRoutine(leftChainC, rightChainC, PluginCommon::suffixes[2]);
+    updateFiltersRoutine(leftFiltersA, rightFiltersA, PluginCommon::suffixes[0]);
+    updateFiltersRoutine(leftFiltersB, rightFiltersB, PluginCommon::suffixes[1]);
+    updateFiltersRoutine(leftFiltersC, rightFiltersC, PluginCommon::suffixes[2]);
 }
 
 
@@ -227,7 +205,7 @@ bool XFadeEQAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) 
 }
 #endif
 
-void XFadeEQAudioProcessor::processAndAdd(Chain& chain, float weight, const juce::AudioBuffer<float>& dryInBuffer, juce::AudioBuffer<float>& buffer, int channel)
+void XFadeEQAudioProcessor::processAndAdd(FilterArray& filters, float weight, const juce::AudioBuffer<float>& dryInBuffer, juce::AudioBuffer<float>& buffer, int channel)
 {
     // process()およびProcessContextReplacingが破壊的処理
     // なので、dry音をtemporaryに処理して加算する関数を用意したがDSPライブラリにある気がする
@@ -240,7 +218,10 @@ void XFadeEQAudioProcessor::processAndAdd(Chain& chain, float weight, const juce
     juce::dsp::AudioBlock<float> block(tempBuffer);
     block = block.getSingleChannelBlock(channel);
     juce::dsp::ProcessContextReplacing<float> context(block);
-    chain.process(context);
+    for (int i = 0; i < PluginCommon::numBands; ++i)
+    {
+        filters[i].process(context);
+    }
     
     // フィルタ後のtempBufferをbufferへ重み付け加算
     buffer.addFrom(channel, 0, tempBuffer, channel, 0, buffer.getNumSamples(), weight);
@@ -277,17 +258,17 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     if (totalNumInputChannels >= 1)
     {
         // 左フィルタ適用
-        processAndAdd(leftChainA, weightA, dryInBuffer, buffer, 0);
-        processAndAdd(leftChainB, weightB, dryInBuffer, buffer, 0);
-        processAndAdd(leftChainC, weightC, dryInBuffer, buffer, 0);
+        processAndAdd(leftFiltersA, weightA, dryInBuffer, buffer, 0);
+        processAndAdd(leftFiltersB, weightB, dryInBuffer, buffer, 0);
+        processAndAdd(leftFiltersC, weightC, dryInBuffer, buffer, 0);
     }
 
     if (totalNumInputChannels >= 2)
     {
         // 右フィルタ適用
-        processAndAdd(rightChainA, weightA, dryInBuffer, buffer, 1);
-        processAndAdd(rightChainB, weightB, dryInBuffer, buffer, 1);
-        processAndAdd(rightChainC, weightC, dryInBuffer, buffer, 1);
+        processAndAdd(rightFiltersA, weightA, dryInBuffer, buffer, 1);
+        processAndAdd(rightFiltersB, weightB, dryInBuffer, buffer, 1);
+        processAndAdd(rightFiltersC, weightC, dryInBuffer, buffer, 1);
     }
 }
 

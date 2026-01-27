@@ -11,6 +11,8 @@
 #include <JuceHeader.h>
 #include <juce_dsp/juce_dsp.h>
 #include <string_view>
+#include "PluginCommon.h"
+#include <array>
 
 //==============================================================================
 /**
@@ -62,26 +64,20 @@ public:
 private:
     // エイリアス
     using Filter = juce::dsp::IIR::Filter<float>;
-    using Chain = juce::dsp::ProcessorChain<Filter, Filter, Filter, Filter, Filter, Filter, Filter, Filter, Filter, Filter>;
+    using FilterArray = std::array<Filter, PluginCommon::numBands>;
+
     // 処理チェイン宣言
-    Chain leftChainA, rightChainA;
-    Chain leftChainB, rightChainB;
-    Chain leftChainC, rightChainC;
+    FilterArray leftFiltersA, rightFiltersA;
+    FilterArray leftFiltersB, rightFiltersB;
+    FilterArray leftFiltersC, rightFiltersC;
 
     // パラレルプロセッシングのためのバッファ
     juce::AudioBuffer<float> tempBuffer;
     juce::AudioBuffer<float> dryInBuffer;
 
-    // バンド定義
-    enum ChainIndices
-    {
-        Band1, Band2, Band3, Band4, Band5,
-        Band6, Band7, Band8, Band9, Band10
-    };
-
     void updateFilters();
-    void updateFiltersRoutine(Chain& leftChain, Chain& rightChain, std::string_view suffix);
-    void processAndAdd(Chain& chain, float weight, const juce::AudioBuffer<float>& dryInBuffer, juce::AudioBuffer<float>& buffer, int channel);
+    void updateFiltersRoutine(FilterArray& leftFilters, FilterArray& rightFilters, std::string_view suffix);
+    void processAndAdd(FilterArray& filters, float weight, const juce::AudioBuffer<float>& dryInBuffer, juce::AudioBuffer<float>& buffer, int channel);
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XFadeEQAudioProcessor)
