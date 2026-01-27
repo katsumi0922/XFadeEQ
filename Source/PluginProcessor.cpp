@@ -8,21 +8,8 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-
-/*
-  ==============================================================================
-
-    ファイルスコープ
-
-  ==============================================================================
-*/
-
-// パラメータをベクターから生成したい
-static const std::vector<float> freqs = { 31.25f, 62.5f, 125.0f, 250.0f, 500.0f, 1000.0f, 2000.0f, 4000.0f, 8000.0f, 16000.0f };
-static const std::vector<std::string> paramIds = { "g31p25", "g62p5", "g125", "g250", "g500", "g1k", "g2k", "g4k", "g8k", "g16k" };
-static const std::vector<std::string> paramNames = { "31.25 Hz", "62.5 Hz", "125 Hz", "250 Hz", "500 Hz", "1 kHz", "2 kHz", "4 kHz", "8 kHz", "16 kHz" };
-static const std::vector<std::string> suffixes = { "_A", "_B", "_C" };
-static const std::vector<std::string> subscripts = { " (A)", " (B)", " (C)" };
+#include "PluginCommon.h"
+#include <format>
 
 //==============================================================================
 juce::AudioProcessorValueTreeState::ParameterLayout XFadeEQAudioProcessor::createParameterLayout()
@@ -35,12 +22,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout XFadeEQAudioProcessor::creat
     layout.add(std::make_unique<juce::AudioParameterFloat>("xFader", "XFader <-1:C, 0:A, 1:B>", -1.0f, 1.0f, 0.0f));
 
     // バンド数×EQ数 10×3分layout.add()
-    for (int i = 0; i < suffixes.size(); i++)
+    for (int i = 0; i < PluginCommon::suffixes.size(); i++)
     {
-        for (int j = 0; j < freqs.size(); j++)
+        for (int j = 0; j < PluginCommon::freqs.size(); j++)
         {
-            auto id = paramIds[j] + suffixes[i];
-            auto name = paramNames[j] + subscripts[i];
+            //auto id = std::string(PluginCommon::paramIds[j]) + suffixes[i];
+            auto id = std::format("{}{}", PluginCommon::paramIds[j], PluginCommon::suffixes[i]);
+            //auto name = paramNames[j] + subscripts[i];
+            auto name = std::format("{}{}", PluginCommon::paramNames[j], PluginCommon::subscripts[i]);
             layout.add(std::make_unique<juce::AudioParameterFloat>(id, name, -12.0f, 12.0f, 0.0f));
         }
     }
@@ -157,23 +146,23 @@ void XFadeEQAudioProcessor::releaseResources()
     // spare memory, etc.
 }
 
-void XFadeEQAudioProcessor::updateFiltersRoutine(Chain& leftChain, Chain& rightChain, const std::string& suffix )
+void XFadeEQAudioProcessor::updateFiltersRoutine(Chain& leftChain, Chain& rightChain, std::string_view suffix )
 {
     // ★もっとスマートなやり方がある気がするけど思いつかない ベクターを活かせてない
     // 係数セットのところがtemplate引数なのでループ化しにくい 本来なら設計をちゃんとした上で実装するべきで、エイヤでやってるのでしょうがない
     // 多分、今回のような同じ種類のプロセッサ(filter)を10個並べてるようなケースではProcessorChain使わないほうが良い
     
     // パラメータの取得
-    auto g31p25 = apvts.getRawParameterValue ("g31p25" + suffix)->load();
-    auto g62p5  = apvts.getRawParameterValue ("g62p5" + suffix)->load();
-    auto g125   = apvts.getRawParameterValue ("g125" + suffix)->load();
-    auto g250   = apvts.getRawParameterValue ("g250" + suffix)->load();
-    auto g500   = apvts.getRawParameterValue ("g500" + suffix)->load();
-    auto g1k    = apvts.getRawParameterValue ("g1k" + suffix)->load();
-    auto g2k    = apvts.getRawParameterValue ("g2k" + suffix)->load();
-    auto g4k    = apvts.getRawParameterValue ("g4k" + suffix)->load();
-    auto g8k    = apvts.getRawParameterValue ("g8k" + suffix)->load();
-    auto g16k   = apvts.getRawParameterValue ("g16k" + suffix)->load();
+    auto g31p25 = apvts.getRawParameterValue (std::format("g31p25{}", suffix))->load();
+    auto g62p5  = apvts.getRawParameterValue (std::format("g62p5{}", suffix))->load();
+    auto g125   = apvts.getRawParameterValue (std::format("g125{}", suffix))->load();
+    auto g250   = apvts.getRawParameterValue (std::format("g250{}", suffix))->load();
+    auto g500   = apvts.getRawParameterValue (std::format("g500{}", suffix))->load();
+    auto g1k    = apvts.getRawParameterValue (std::format("g1k{}", suffix))->load();
+    auto g2k    = apvts.getRawParameterValue (std::format("g2k{}", suffix))->load();
+    auto g4k    = apvts.getRawParameterValue (std::format("g4k{}", suffix))->load();
+    auto g8k    = apvts.getRawParameterValue (std::format("g8k{}", suffix))->load();
+    auto g16k   = apvts.getRawParameterValue (std::format("g16k{}", suffix))->load();
 
     auto sampleRate = getSampleRate();
     const float Q = 1.4f;
@@ -205,9 +194,9 @@ void XFadeEQAudioProcessor::updateFiltersRoutine(Chain& leftChain, Chain& rightC
 
 void XFadeEQAudioProcessor::updateFilters()
 {
-    updateFiltersRoutine(leftChainA, rightChainA, suffixes[0]);
-    updateFiltersRoutine(leftChainB, rightChainB, suffixes[1]);
-    updateFiltersRoutine(leftChainC, rightChainC, suffixes[2]);
+    updateFiltersRoutine(leftChainA, rightChainA, PluginCommon::suffixes[0]);
+    updateFiltersRoutine(leftChainB, rightChainB, PluginCommon::suffixes[1]);
+    updateFiltersRoutine(leftChainC, rightChainC, PluginCommon::suffixes[2]);
 }
 
 
@@ -311,9 +300,10 @@ bool XFadeEQAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* XFadeEQAudioProcessor::createEditor()
 {
-    //// 汎用エディタ生成
-    //return new juce::GenericAudioProcessorEditor (*this);
-    return new XFadeEQAudioProcessorEditor(*this, apvts);
+    // 汎用エディタ生成
+    return new juce::GenericAudioProcessorEditor (*this);
+
+    //return new XFadeEQAudioProcessorEditor(*this, apvts);
 }
 
 //==============================================================================

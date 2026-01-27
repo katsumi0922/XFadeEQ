@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include <juce_dsp/juce_dsp.h>
+#include <string_view>
 
 //==============================================================================
 /**
@@ -79,7 +80,7 @@ private:
     };
 
     void updateFilters();
-    void updateFiltersRoutine(Chain& leftChain, Chain& rightChain, const std::string& suffix);
+    void updateFiltersRoutine(Chain& leftChain, Chain& rightChain, std::string_view suffix);
     void processAndAdd(Chain& chain, float weight, const juce::AudioBuffer<float>& dryInBuffer, juce::AudioBuffer<float>& buffer, int channel);
 
     //==============================================================================

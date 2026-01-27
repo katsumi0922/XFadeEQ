@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="equVds" name="XFadeEQ" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="katsumi0922"
-              pluginManufacturerCode="K922" pluginCode="XFEQ">
+              pluginManufacturerCode="K922" pluginCode="XFEQ" cppLanguageStandard="20">
   <MAINGROUP id="sfXsvh" name="XFadeEQ">
     <GROUP id="{B9212C53-D590-9625-6A37-93B632FDCCF6}" name="Source">
       <FILE id="CllDoS" name="PluginCommon.h" compile="0" resource="0" file="Source/PluginCommon.h"/>
