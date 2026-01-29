@@ -96,6 +96,11 @@ xxx
 - https://panda-clip.com/juce-introduction-to-dsp3/
   - juce::dsp::ProcessorChainを使えば複数のdsp処理をまとめて扱える
 
+### GUI周り
+- https://qiita.com/perfectpanda145/items/45f637fe54a3a76e60c9
+  - Sliderの扱い方
+  - APVTSとの結びつけ方など
+
 ### その他
 - https://note.com/leftbank/n/nc60ebc8bf3d2
 - https://www.youtube.com/watch?v=i_Iq4_Kd7Rc

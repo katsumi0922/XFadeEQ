@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "PluginCommon.h"
 
 //==============================================================================
 /**
@@ -32,8 +33,15 @@ private:
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 
     juce::AudioProcessorValueTreeState& valueTreeState;
-    juce::Slider eqSlider;
-    std::unique_ptr<SliderAttachment> eqAttachment;
+
+    // 10band*3段 分のSliderとAttachmentを配列で定義
+    static constexpr int numEqSliders = PluginCommon::numEqs * PluginCommon::numBands;
+    std::array<juce::Slider, numEqSliders> eqSliders;
+    std::array<std::unique_ptr<SliderAttachment>, numEqSliders> eqAttachments;
+
+    // xFader用
+    juce::Slider xFaderSlider;
+    std::unique_ptr<SliderAttachment> xFaderAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XFadeEQAudioProcessorEditor)
 };
