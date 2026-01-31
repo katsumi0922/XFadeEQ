@@ -67,16 +67,16 @@ private:
     using FilterArray = std::array<Filter, PluginCommon::numBands>;
 
     // 処理チェイン宣言
-    FilterArray leftFiltersA, rightFiltersA;
-    FilterArray leftFiltersB, rightFiltersB;
-    FilterArray leftFiltersC, rightFiltersC;
+    FilterArray filtersA;
+    FilterArray filtersB;
+    FilterArray filtersC;
 
     // パラレルプロセッシングのためのバッファ
     juce::AudioBuffer<float> tempBuffer;
     juce::AudioBuffer<float> dryInBuffer;
 
     void updateFilters();
-    void updateFiltersRoutine(FilterArray& leftFilters, FilterArray& rightFilters, std::string_view suffix);
+    void updateFiltersRoutine(FilterArray& filters, std::string_view suffix);
     void processAndAdd(FilterArray& filters, float weight, const juce::AudioBuffer<float>& dryInBuffer, juce::AudioBuffer<float>& buffer, int channel);
 
     //==============================================================================

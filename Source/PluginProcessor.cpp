@@ -128,12 +128,9 @@ void XFadeEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     // スペックの適用
     for (int i = 0; i < PluginCommon::numBands; ++i)
     {
-        leftFiltersA[i].prepare(spec);
-        rightFiltersA[i].prepare(spec);
-        leftFiltersB[i].prepare(spec);
-        rightFiltersB[i].prepare(spec);
-        leftFiltersC[i].prepare(spec);
-        rightFiltersC[i].prepare(spec);
+        filtersA[i].prepare(spec);
+        filtersB[i].prepare(spec);
+        filtersC[i].prepare(spec);
     }
 
     // パラレルプロセッシングのためのバッファ
@@ -150,7 +147,7 @@ void XFadeEQAudioProcessor::releaseResources()
     // spare memory, etc.
 }
 
-void XFadeEQAudioProcessor::updateFiltersRoutine(FilterArray& leftFilters, FilterArray& rightFilters, std::string_view suffix )
+void XFadeEQAudioProcessor::updateFiltersRoutine(FilterArray& filters, std::string_view suffix )
 {
     auto sampleRate = getSampleRate();
 
@@ -165,16 +162,15 @@ void XFadeEQAudioProcessor::updateFiltersRoutine(FilterArray& leftFilters, Filte
         auto coeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, PluginCommon::freqs[i], PluginCommon::filterQ, juce::Decibels::decibelsToGain(gain));
 
         // 係数セット
-        leftFilters[i].coefficients = coeffs;
-        rightFilters[i].coefficients = coeffs;
+        filters[i].coefficients = coeffs;
     }
 }
 
 void XFadeEQAudioProcessor::updateFilters()
 {
-    updateFiltersRoutine(leftFiltersA, rightFiltersA, PluginCommon::suffixes[0]);
-    updateFiltersRoutine(leftFiltersB, rightFiltersB, PluginCommon::suffixes[1]);
-    updateFiltersRoutine(leftFiltersC, rightFiltersC, PluginCommon::suffixes[2]);
+    updateFiltersRoutine(filtersA, PluginCommon::suffixes[0]);
+    updateFiltersRoutine(filtersB, PluginCommon::suffixes[1]);
+    updateFiltersRoutine(filtersC, PluginCommon::suffixes[2]);
 }
 
 
@@ -258,17 +254,17 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     if (totalNumInputChannels >= 1)
     {
         // 左フィルタ適用
-        processAndAdd(leftFiltersA, weightA, dryInBuffer, buffer, 0);
-        processAndAdd(leftFiltersB, weightB, dryInBuffer, buffer, 0);
-        processAndAdd(leftFiltersC, weightC, dryInBuffer, buffer, 0);
+        processAndAdd(filtersA, weightA, dryInBuffer, buffer, 0);
+        processAndAdd(filtersB, weightB, dryInBuffer, buffer, 0);
+        processAndAdd(filtersC, weightC, dryInBuffer, buffer, 0);
     }
 
     if (totalNumInputChannels >= 2)
     {
         // 右フィルタ適用
-        processAndAdd(rightFiltersA, weightA, dryInBuffer, buffer, 1);
-        processAndAdd(rightFiltersB, weightB, dryInBuffer, buffer, 1);
-        processAndAdd(rightFiltersC, weightC, dryInBuffer, buffer, 1);
+        processAndAdd(filtersA, weightA, dryInBuffer, buffer, 1);
+        processAndAdd(filtersB, weightB, dryInBuffer, buffer, 1);
+        processAndAdd(filtersC, weightC, dryInBuffer, buffer, 1);
     }
 }
 
