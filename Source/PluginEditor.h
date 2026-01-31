@@ -18,7 +18,7 @@
 class XFadeEQAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
-    XFadeEQAudioProcessorEditor (XFadeEQAudioProcessor&, juce::AudioProcessorValueTreeState& layout);
+    XFadeEQAudioProcessorEditor (XFadeEQAudioProcessor&, juce::AudioProcessorValueTreeState&);
     ~XFadeEQAudioProcessorEditor() override;
 
     //==============================================================================
