@@ -5,6 +5,10 @@
               pluginManufacturerCode="K922" pluginCode="XFEQ" cppLanguageStandard="20">
   <MAINGROUP id="sfXsvh" name="XFadeEQ">
     <GROUP id="{B9212C53-D590-9625-6A37-93B632FDCCF6}" name="Source">
+      <GROUP id="{20E44EA2-FDB6-2E83-827C-B728BA653376}" name="Resources">
+        <FILE id="teKo33" name="xfader_diagram.drawio.png" compile="0" resource="1"
+              file="Resources/xfader_diagram.drawio.png"/>
+      </GROUP>
       <FILE id="CllDoS" name="PluginCommon.h" compile="0" resource="0" file="Source/PluginCommon.h"/>
       <FILE id="t4n8JT" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>

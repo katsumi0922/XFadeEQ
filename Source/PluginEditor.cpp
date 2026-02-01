@@ -9,6 +9,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include <format>
+#include "../JuceLibraryCode/JuceHeader.h"  // 画像バイナリ参照用
 
 //==============================================================================
 XFadeEQAudioProcessorEditor::XFadeEQAudioProcessorEditor (XFadeEQAudioProcessor& p, juce::AudioProcessorValueTreeState& apvts)
@@ -41,7 +42,7 @@ XFadeEQAudioProcessorEditor::XFadeEQAudioProcessorEditor (XFadeEQAudioProcessor&
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (550, 400);
+    setSize (550, 410);
 }
 
 XFadeEQAudioProcessorEditor::~XFadeEQAudioProcessorEditor()
@@ -73,6 +74,19 @@ void XFadeEQAudioProcessorEditor::paint (juce::Graphics& g)
         // 周波数ラベルを配置
         g.drawFittedText(std::string(PluginCommon::freqLabels[j]), x, 10 + (sliderHeight + 5) * PluginCommon::numEqs, sliderWidth, 5, juce::Justification::centred, 1);
     }
+
+    // xFaderの図を配置
+    juce::Image xFaderDiagram = juce::ImageCache::getFromMemory(BinaryData::xfader_diagram_drawio_png, BinaryData::xfader_diagram_drawio_pngSize);
+    g.drawImage(xFaderDiagram,
+        50 + PluginCommon::numBands * sliderWidth,
+        10 + (sliderHeight + 5) * (PluginCommon::numEqs - 1) + sliderHeight / 2,
+        100,
+        60,
+        0,
+        0,
+        xFaderDiagram.getWidth(), 
+        xFaderDiagram.getHeight()
+    );
 }
 
 void XFadeEQAudioProcessorEditor::resized()
