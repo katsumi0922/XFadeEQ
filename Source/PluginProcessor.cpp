@@ -127,9 +127,12 @@ void XFadeEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     // スペックの適用
     for (int i = 0; i < PluginCommon::numBands; ++i)
     {
-        filtersA[i].prepare(spec);
-        filtersB[i].prepare(spec);
-        filtersC[i].prepare(spec);
+        filtersA[0][i].prepare(spec);
+        filtersA[1][i].prepare(spec);
+        filtersB[0][i].prepare(spec);
+        filtersB[1][i].prepare(spec);
+        filtersC[0][i].prepare(spec);
+        filtersC[1][i].prepare(spec);
     }
 
     // パラレルプロセッシングのためのバッファ
@@ -167,9 +170,12 @@ void XFadeEQAudioProcessor::updateFiltersRoutine(FilterArray& filters, std::stri
 
 void XFadeEQAudioProcessor::updateFilters()
 {
-    updateFiltersRoutine(filtersA, PluginCommon::suffixes[0]);
-    updateFiltersRoutine(filtersB, PluginCommon::suffixes[1]);
-    updateFiltersRoutine(filtersC, PluginCommon::suffixes[2]);
+    updateFiltersRoutine(filtersA[0], PluginCommon::suffixes[0]);
+    updateFiltersRoutine(filtersA[1], PluginCommon::suffixes[0]);
+    updateFiltersRoutine(filtersB[0], PluginCommon::suffixes[1]);
+    updateFiltersRoutine(filtersB[1], PluginCommon::suffixes[1]);
+    updateFiltersRoutine(filtersC[0], PluginCommon::suffixes[2]);
+    updateFiltersRoutine(filtersC[1], PluginCommon::suffixes[2]);
 }
 
 
@@ -253,17 +259,17 @@ void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     if (totalNumInputChannels >= 1)
     {
         // 左フィルタ適用
-        processAndAdd(filtersA, weightA, dryInBuffer, buffer, 0);
-        processAndAdd(filtersB, weightB, dryInBuffer, buffer, 0);
-        processAndAdd(filtersC, weightC, dryInBuffer, buffer, 0);
+        processAndAdd(filtersA[0], weightA, dryInBuffer, buffer, 0);
+        processAndAdd(filtersB[0], weightB, dryInBuffer, buffer, 0);
+        processAndAdd(filtersC[0], weightC, dryInBuffer, buffer, 0);
     }
 
     if (totalNumInputChannels >= 2)
     {
         // 右フィルタ適用
-        processAndAdd(filtersA, weightA, dryInBuffer, buffer, 1);
-        processAndAdd(filtersB, weightB, dryInBuffer, buffer, 1);
-        processAndAdd(filtersC, weightC, dryInBuffer, buffer, 1);
+        processAndAdd(filtersA[1], weightA, dryInBuffer, buffer, 1);
+        processAndAdd(filtersB[1], weightB, dryInBuffer, buffer, 1);
+        processAndAdd(filtersC[1], weightC, dryInBuffer, buffer, 1);
     }
 }
 
