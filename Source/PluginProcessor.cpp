@@ -223,9 +223,12 @@ void XFadeEQAudioProcessor::processAndAdd(FilterArray& filters, float weight, co
     {
         filters[i].process(context);
     }
-    
-    // フィルタ後のtempBufferをbufferへ重み付け加算
-    buffer.addFrom(channel, 0, tempBuffer, channel, 0, buffer.getNumSamples(), weight);
+
+    // フィルタ後のtempBufferをbufferへ重み付け加算 weightが0の場合はskip
+    if (weight > 0.0f)
+    {
+        buffer.addFrom(channel, 0, tempBuffer, channel, 0, buffer.getNumSamples(), weight);
+    }
 }
 
 void XFadeEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
