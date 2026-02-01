@@ -206,14 +206,14 @@ bool XFadeEQAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) 
 }
 #endif
 
-void XFadeEQAudioProcessor::processAndAdd(FilterArray& filters, float weight, const juce::AudioBuffer<float>& dryInBuffer, juce::AudioBuffer<float>& buffer, int channel)
+void XFadeEQAudioProcessor::processAndAdd(FilterArray& filters, float weight, const juce::AudioBuffer<float>& dryIn, juce::AudioBuffer<float>& buffer, int channel)
 {
     // process()およびProcessContextReplacingが破壊的処理
     // なので、dry音をtemporaryに処理して加算する関数を用意したがDSPライブラリにある気がする
     // 探したけどちょうどいいのが見当たらなかった
 
-    // dryInBufferをtempBufferへコピー(必要なchだけ)
-    tempBuffer.copyFrom(channel, 0, dryInBuffer, channel, 0, dryInBuffer.getNumSamples());
+    // dryInをtempBufferへコピー(必要なchだけ)
+    tempBuffer.copyFrom(channel, 0, dryIn, channel, 0, dryIn.getNumSamples());
 
     // フィルタ適用
     juce::dsp::AudioBlock<float> block(tempBuffer);
