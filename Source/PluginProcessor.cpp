@@ -8,7 +8,6 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include "PluginCommon.h"
 #include <format>
 
 //==============================================================================

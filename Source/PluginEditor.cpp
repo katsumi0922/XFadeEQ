@@ -6,7 +6,6 @@
   ==============================================================================
 */
 
-#include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include <format>
 #include "../JuceLibraryCode/JuceHeader.h"  // 画像バイナリ参照用
