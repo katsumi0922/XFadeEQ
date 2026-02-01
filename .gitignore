@@ -5,3 +5,4 @@ JuceLibraryCode/
 *.user
 *.VC.db
 *.opendb
+.editorconfig
