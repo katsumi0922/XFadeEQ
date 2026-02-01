@@ -119,10 +119,11 @@ void XFadeEQAudioProcessor::changeProgramName (int index, const juce::String& ne
 void XFadeEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // 信号処理のスペック
-    juce::dsp::ProcessSpec spec;
-    spec.sampleRate = sampleRate;
-    spec.maximumBlockSize = (juce::uint32) samplesPerBlock;
-    spec.numChannels = 1;
+    juce::dsp::ProcessSpec spec{
+        .sampleRate = sampleRate,
+        .maximumBlockSize = (juce::uint32)samplesPerBlock,
+        .numChannels = 1
+    };
 
     // スペックの適用
     for (int i = 0; i < PluginCommon::numBands; ++i)
