@@ -66,10 +66,10 @@ private:
     using Filter = juce::dsp::IIR::Filter<float>;
     using FilterArray = std::array<Filter, PluginCommon::numBands>;
 
-    // 処理チェイン宣言
-    FilterArray filtersA;
-    FilterArray filtersB;
-    FilterArray filtersC;
+    // 処理チェイン宣言 (L/R用にarrayで2ch分用意)
+    std::array<FilterArray, 2> filtersA;
+    std::array<FilterArray, 2> filtersB;
+    std::array<FilterArray, 2> filtersC;
 
     // パラレルプロセッシングのためのバッファ
     juce::AudioBuffer<float> tempBuffer;
