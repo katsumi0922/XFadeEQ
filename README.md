@@ -71,13 +71,16 @@ xxx
 
 ### パラメーター関連
 - https://qiita.com/COx2/items/a0dc18ef29685f951257
-    - 汎用的なGUIを生成してくれるGenericAudioProcessorEditorクラス
-    - 信号処理に専念したい序盤をこれを使うと良さそう
+  - 汎用的なGUIを生成してくれるGenericAudioProcessorEditorクラス
+  - 信号処理に専念したい序盤をこれを使うと良さそう
 - https://qiita.com/perfectpanda145/items/45f637fe54a3a76e60c9
-    - APVTS: 音声処理クラス(XXAudioProcessor)とエディタクラス（XXAudioProcessorEditorクラス）の両方でアクセスできるパラメータが容易に定義
-    - GenericAudioProcessorEditorは、Processorが持ってる“AudioProcessorParameter群”を自動でUI化
-    - APVTSは、その“AudioProcessorParameter群”を まとめて定義・管理しやすい
-    - (今回はそこまで手が回らなそうだけど）APVTSを使うと **state保存/復元（DAWプロジェクト保存）**が簡単に実装できる
+  - APVTS: 音声処理クラス(XXAudioProcessor)とエディタクラス（XXAudioProcessorEditorクラス）の両方でアクセスできるパラメータが容易に定義
+  - GenericAudioProcessorEditorは、Processorが持ってる“AudioProcessorParameter群”を自動でUI化
+  - APVTSは、その“AudioProcessorParameter群”を まとめて定義・管理しやすい
+  - (今回はそこまで手が回らなそうだけど）APVTSを使うと **state保存/復元（DAWプロジェクト保存）**が簡単に実装できる
+- https://qiita.com/perfectpanda145/items/45f637fe54a3a76e60c9
+  - xmlにパラメータを保存しておくことでDAW開き直してもパラメータが復帰する
+  - APVTSを使いまわして管理すれば実装少なく済む
 
 ### juce_dspとか基本的な信号処理
 - https://trap.jp/post/1558/
