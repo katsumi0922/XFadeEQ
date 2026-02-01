@@ -43,5 +43,8 @@ private:
     juce::Slider xFaderSlider;
     std::unique_ptr<SliderAttachment> xFaderAttachment;
 
+    static constexpr int sliderWidth = 40;
+    static constexpr int sliderHeight = 120;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XFadeEQAudioProcessorEditor)
 };
